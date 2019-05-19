@@ -124,19 +124,23 @@ contract FlightSuretyApp {
     /********************************************************************************************/
 
 
+    function isAirline(address airlineId) external returns ( bool registered ) {
+        return true;
+    }
+
    /**
     * @dev Add an airline to the registration queue
     *
     */
     function registerAirline
                             (
-
+                                address airlineId,
+                                string airlineName
                             )
                             external
-                            pure
                             returns(bool success, uint256 votes)
     {
-        return (success, 0);
+        return flightSuretyData.registerAirline(airlineId, airlineName);
     }
 
 
@@ -189,7 +193,7 @@ contract FlightSuretyApp {
                                             });
 
         emit OracleRequest(index, airline, flight, timestamp);
-    } 
+    }
 
 
 // region ORACLE MANAGEMENT
@@ -206,7 +210,7 @@ contract FlightSuretyApp {
 
     struct Oracle {
         bool isRegistered;
-        uint8[3] indexes;        
+        uint8[3] indexes;
     }
 
     // Track all registered oracles
@@ -286,7 +290,7 @@ contract FlightSuretyApp {
         require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
 
 
-        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp)); 
+        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
         require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
 
         oracleResponses[key].responses[statusCode].push(msg.sender);
@@ -376,4 +380,13 @@ contract FlightSuretyData {
                                 bool mode
                             )
                             external;
+    function registerAirline
+                            (
+                                address airlineId,
+                                string name
+                            )
+                            external
+                            returns(bool success, uint256 votes);
+
+    function isAirline(address airlineId) external returns ( bool registered );
 }

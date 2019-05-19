@@ -11,6 +11,8 @@ contract FlightSuretyData {
 
     address private contractOwner;                                      // Account used to deploy contract
 
+    address firstAirline;
+
     mapping(address => uint256) authorizedCallers;                      // Authorized Callers
 
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
@@ -19,6 +21,7 @@ contract FlightSuretyData {
         address id;
         string name;
         bool funded;
+        uint256 exists;
     }
 
     uint256 registeredAirlines = 0;
@@ -42,13 +45,14 @@ contract FlightSuretyData {
     */
     constructor
                                 (
-                                    address firstAirline
+                                    address _firstAirline
                                 )
                                 public
     {
         contractOwner = msg.sender;
-        Airline memory airline = Airline(firstAirline, "First Airline", false);
-        airlines[firstAirline] = airline;
+        Airline memory airline = Airline(_firstAirline, "First Airline", false, 1);
+        airlines[_firstAirline] = airline;
+        firstAirline = _firstAirline;
     }
 
     /********************************************************************************************/
@@ -80,13 +84,13 @@ contract FlightSuretyData {
 
     modifier requireFundedAirline()
     {
-        require(airlines[msg.sender].funded, "Airlines is not funded");
+        require(airlines[tx.origin].funded, "Airline is not funded");
         _;
     }
 
     modifier requireAirlineFunds()
     {
-        require(msg.value >= 10 ether, "Insuficient Ether");
+        require(msg.value == 10 ether, "Insuficient Ether");
         _;
     }
 
@@ -107,7 +111,6 @@ contract FlightSuretyData {
     function isOperational()
                             public
                             view
-                            requireAuthorizedCaller
                             returns(bool)
     {
         return operational;
@@ -124,7 +127,7 @@ contract FlightSuretyData {
                                 bool mode
                             )
                             external
-                            requireAuthorizedCaller
+                            requireContractOwner
     {
         operational = mode;
     }
@@ -140,6 +143,10 @@ contract FlightSuretyData {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
+    function isAirline(address airlineId) external view returns ( bool registered ) {
+        registered = airlines[airlineId].exists == 1;
+    }
+
    /**
     * @dev Add an airline to the registration queue
     *      Can only be called from FlightSuretyApp contract
@@ -153,18 +160,27 @@ contract FlightSuretyData {
                             requireFundedAirline
                             requireAuthorizedCaller
                             external
+                            returns(bool success, uint256 votes)
     {
         if ( registeredAirlines < 4 ) {
-            require(msg.sender == airlines[0].id, "Must be the first Airline to add more");
-            Airline memory airline = Airline(airlineId, name, false);
+            require(tx.origin == firstAirline, "Must be the first airline to add more");
+            Airline memory airline = Airline(airlineId, name, false, 1);
             airlines[airlineId] = airline;
+            success = true;
+            votes = 0;
             emit AirlineRegistered(name);
         } else {
             tmpAirlines[airlineId] = tmpAirlines[airlineId].add(1);
             if ( tmpAirlines[airlineId] >= registeredAirlines.div(2) ) {
-                Airline memory airline2 = Airline(airlineId, name, false);
+                Airline memory airline2 = Airline(airlineId, name, false, 1);
                 airlines[airlineId] = airline2;
+                success = true;
+                votes = tmpAirlines[airlineId];
+                delete tmpAirlines[airlineId];
                 emit AirlineRegistered(name);
+            } else {
+                success = true;
+                votes = tmpAirlines[airlineId];
             }
         }
     }

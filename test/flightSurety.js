@@ -75,13 +75,11 @@ contract('Flight Surety Tests', async (accounts) => {
     
     // ARRANGE
     let newAirline = accounts[2];
-
-    // ACT
+    let ether = 10 * config.weiMultiple;
     try {
-        await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
-    }
-    catch(e) {
-
+        await config.flightSuretyApp.registerAirline(newAirline, "Test", {from: config.firstAirline});    
+    } catch (e) {
+        
     }
     let result = await config.flightSuretyData.isAirline.call(newAirline); 
 
