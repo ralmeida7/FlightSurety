@@ -28,8 +28,6 @@ contract FlightSuretyData {
 
     mapping(address => Airline) airlines;
 
-    mapping(address => uint256) tmpAirlines;
-
     uint256 funds = 0;
 
     /********************************************************************************************/
@@ -79,12 +77,6 @@ contract FlightSuretyData {
     modifier requireContractOwner()
     {
         require(msg.sender == contractOwner, "Caller is not contract owner");
-        _;
-    }
-
-    modifier requireFundedAirline()
-    {
-        require(airlines[tx.origin].funded, "Airline is not funded");
         _;
     }
 
@@ -147,6 +139,18 @@ contract FlightSuretyData {
         registered = airlines[airlineId].exists == 1;
     }
 
+   function isAirlineFunded(address airlineId) external view returns ( bool funded ) {
+        funded = airlines[airlineId].funded == true;
+    }
+
+   function isFirstAirline(address airlineId) external view returns ( bool ) {
+        return firstAirline == airlineId;
+    }
+
+    function getRegisteredAirlines() external view returns ( uint256 ) {
+        return registeredAirlines;
+    }
+
    /**
     * @dev Add an airline to the registration queue
     *      Can only be called from FlightSuretyApp contract
@@ -157,32 +161,12 @@ contract FlightSuretyData {
                                 address airlineId,
                                 string name
                             )
-                            requireFundedAirline
                             requireAuthorizedCaller
                             external
-                            returns(bool success, uint256 votes)
     {
-        if ( registeredAirlines < 4 ) {
-            require(tx.origin == firstAirline, "Must be the first airline to add more");
-            Airline memory airline = Airline(airlineId, name, false, 1);
-            airlines[airlineId] = airline;
-            success = true;
-            votes = 0;
-            emit AirlineRegistered(name);
-        } else {
-            tmpAirlines[airlineId] = tmpAirlines[airlineId].add(1);
-            if ( tmpAirlines[airlineId] >= registeredAirlines.div(2) ) {
-                Airline memory airline2 = Airline(airlineId, name, false, 1);
-                airlines[airlineId] = airline2;
-                success = true;
-                votes = tmpAirlines[airlineId];
-                delete tmpAirlines[airlineId];
-                emit AirlineRegistered(name);
-            } else {
-                success = true;
-                votes = tmpAirlines[airlineId];
-            }
-        }
+        Airline memory airline = Airline(airlineId, name, false, 1);
+        airlines[airlineId] = airline;
+        emit AirlineRegistered(name);
     }
 
 
@@ -236,10 +220,9 @@ contract FlightSuretyData {
                             requireAirlineFunds
     {
         funds += msg.value;
-        Airline memory airline = airlines[msg.sender];
-        airline.funded = true;
+        airlines[msg.sender].funded = true;
         registeredAirlines++;
-        emit AirlineFunded(airline.name);
+        emit AirlineFunded(airlines[msg.sender].name);
     }
 
     function getFlightKey

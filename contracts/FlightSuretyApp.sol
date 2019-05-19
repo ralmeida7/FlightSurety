@@ -18,7 +18,9 @@ contract FlightSuretyApp {
 
     FlightSuretyData flightSuretyData;
 
+    mapping(address => uint256) tmpAirlines;        // Airlines to be aproved
 
+    mapping(address => mapping(address => uint256)) votedAirlines;        // Airlines to be aproved
 
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
@@ -38,6 +40,9 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) private flights;
 
+    event LogEvent(string, uint256);
+
+    event RegisteredAirlines(uint256);
  
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -70,6 +75,17 @@ contract FlightSuretyApp {
     modifier isValidModeForChange(bool mode)
     {
         require(mode != isOperational(), "Mode is the same");
+        _;
+    }
+
+    modifier requireFundedAirline()
+    {
+        require(flightSuretyData.isAirlineFunded(msg.sender), "Airline is not funded");
+        _;
+    }
+
+    modifier requireOneVote(address airlineId) {
+        require(votedAirlines[airlineId][msg.sender] == 0, "Airline alredy voted");
         _;
     }
 
@@ -123,10 +139,11 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-
-    function isAirline(address airlineId) external returns ( bool registered ) {
-        return true;
+    function ua( address airlineId ) internal returns ( uint256 votes ) {
+        tmpAirlines[airlineId] = tmpAirlines[airlineId].add(1);
+        votes = tmpAirlines[airlineId];
     }
+
 
    /**
     * @dev Add an airline to the registration queue
@@ -138,16 +155,57 @@ contract FlightSuretyApp {
                                 string airlineName
                             )
                             external
+                            requireFundedAirline
+                            //requireOneVote(airlineId)
                             returns(bool success, uint256 votes)
     {
-        return flightSuretyData.registerAirline(airlineId, airlineName);
+        uint256 registeredAirlines = flightSuretyData.getRegisteredAirlines();
+        if ( registeredAirlines < 4 ) {
+            require(flightSuretyData.isFirstAirline(msg.sender), "Must be the first airline to add more");
+            success = true;
+            flightSuretyData.registerAirline(airlineId, airlineName);
+        } else {
+            //emit LogEvent("Voted Airline = ", votedAirlines[airlineId][msg.sender]);
+            //votedAirlines[airlineId][msg.sender] = 1;
+
+            votes = tmpAirlines[airlineId].add(1);
+            tmpAirlines[airlineId] = votes;
+            // if ( tmpAirlines[airlineId] >= registeredAirlines.div(2) ) {
+            if ( votes >= 2 ) {
+                // flightSuretyData.registerAirline(airlineId, airlineName);
+                success = true;
+//                delete tmpAirlines[airlineId];
+                //delete votedAirlines[airlineId][msg.sender];
+            } else {
+                success = false;
+            }
+        }
     }
 
+    function registerAirline2(address airlineId, string airlineName) external returns(bool success, uint256 votes, string name)
+    {
+        //emit LogEvent("Voted Airline = ", votedAirlines[airlineId][msg.sender]);
+        //votedAirlines[airlineId][msg.sender] = 1;
+        if ( tmpAirlines[airlineId] == 0 ) {
+            tmpAirlines[airlineId] = 5;
+        }
+        tmpAirlines[airlineId] = tmpAirlines[airlineId].add(1);
+        // if ( tmpAirlines[airlineId] >= registeredAirlines.div(2) ) {
+//         if ( votes >= 2 ) {
+//             // flightSuretyData.registerAirline(airlineId, airlineName);
+//             success = true;
+// //                delete tmpAirlines[airlineId];
+//             //delete votedAirlines[airlineId][msg.sender];
+//         } else {
+//             success = false;
+//         }
+        return (false, tmpAirlines[airlineId], airlineName);
+    }
 
    /**
     * @dev Register a future flight for insuring.
     *
-    */  
+    */
     function registerFlight
                                 (
                                 )
@@ -385,8 +443,13 @@ contract FlightSuretyData {
                                 address airlineId,
                                 string name
                             )
-                            external
-                            returns(bool success, uint256 votes);
+                            external;
 
     function isAirline(address airlineId) external returns ( bool registered );
+
+    function isAirlineFunded(address airlineId) external returns ( bool funded );
+
+    function isFirstAirline(address airlineId) external returns ( bool );
+
+    function getRegisteredAirlines() external returns ( uint256 );
 }
