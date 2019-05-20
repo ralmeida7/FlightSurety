@@ -71,19 +71,6 @@ contract('Flight Surety Tests', async (accounts) => {
 
   });
 
-//   it('(airline) test add function', async () => {    
-    
-//     await config.flightSuretyApp.updateAirline(accounts[5], {from: config.firstAirline});
-//     await config.flightSuretyApp.updateAirline(accounts[5], {from: config.firstAirline});
-//     await config.flightSuretyApp.updateAirline(accounts[5], {from: config.firstAirline});
-//     const result = await config.flightSuretyApp.updateAirline.call(accounts[5], {from: config.firstAirline});
-
-//     // ASSERT
-//     assert.equal(result, 4, "Votes must be 4");
-
-//   });
-
-
   it('(airline) cannot register an Airline using registerAirline() if it is not funded', async () => {
     
     // ARRANGE
@@ -170,15 +157,24 @@ contract('Flight Surety Tests', async (accounts) => {
 
   });
 
+  // it('(airline) test add function', async () => {    
+    
+  //   var result = await config.flightSuretyApp.updateAirline.call(accounts[6], "Test 6", {from: config.firstAirline});
+  //   console.log(result);
+  //   result = await config.flightSuretyApp.updateAirline.call(accounts[6], "Test 6", {from: accounts[2]});
+  //   console.log(result);
+  //   // ASSERT
+  //   assert.equal(result[1], 2, "Votes must be 2");
+
+  // });
+
   it('(airline) register airline 5', async () => {
     
     // ARRANGE
     let airline2 = accounts[2];
     let newAirline5 = accounts[5];
-    var result = await config.flightSuretyApp.registerAirline2.call(newAirline5, "Test 5", {from: airline2});    
-    console.log(result);
-    result = await config.flightSuretyApp.registerAirline2.call(newAirline5, "Test 6", {from: accounts[3]});    
-    console.log(result);
+    var result = await config.flightSuretyApp.registerAirline.call(newAirline5, "Test 6", {from: airline2});    
+    result = await config.flightSuretyApp.registerAirline.call(newAirline5, "Test 6", {from: accounts[3]});    
     // ASSERT
     assert.equal(result[0], true, "Airline must be added");
     assert.equal(new BigNumber(result[1]).toNumber(), 2, "Airline votes must be 2");

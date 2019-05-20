@@ -139,9 +139,30 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-    function ua( address airlineId ) internal returns ( uint256 votes ) {
+    function registerAirline( address airlineId, string airlineName ) external
+     requireFundedAirline requireOneVote(airlineId) returns (bool success, uint256 votes ) {
         tmpAirlines[airlineId] = tmpAirlines[airlineId].add(1);
         votes = tmpAirlines[airlineId];
+        success = false;
+        uint256 registeredAirlines = flightSuretyData.getRegisteredAirlines();
+        if ( registeredAirlines < 4 ) {
+            require(flightSuretyData.isFirstAirline(msg.sender), "Must be the first airline to add more");
+            success = true;
+            flightSuretyData.registerAirline(airlineId, airlineName);
+        } else {
+            votedAirlines[airlineId][msg.sender] = 1;
+            votes = tmpAirlines[airlineId].add(1);
+            tmpAirlines[airlineId] = votes;
+            if ( tmpAirlines[airlineId] >= registeredAirlines.div(2) ) {
+                flightSuretyData.registerAirline(airlineId, airlineName);
+                success = true;
+                delete tmpAirlines[airlineId];
+                delete votedAirlines[airlineId][msg.sender];
+            } else {
+                success = false;
+            }
+        }
+
     }
 
 
@@ -149,7 +170,7 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */
-    function registerAirline
+    function registerAirline3
                             (
                                 address airlineId,
                                 string airlineName
