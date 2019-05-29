@@ -91,7 +91,7 @@ contract('Flight Surety Tests', async (accounts) => {
   it('(airline) fund first airline', async () => {
     
     let ether = 10 * config.weiMultiple;
-    await config.flightSuretyData.fund({from: config.firstAirline, value: ether});
+    await config.flightSuretyApp.fund({from: config.firstAirline, value: ether});
     let result = await config.flightSuretyData.isAirlineFunded(config.firstAirline); 
 
     // ASSERT
@@ -110,9 +110,9 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyApp.registerAirline(newAirline4, "Test 4", {from: config.firstAirline});    
 
     let ether = 10 * config.weiMultiple;
-    await config.flightSuretyData.fund({from: newAirline2, value: ether});
-    await config.flightSuretyData.fund({from: newAirline3, value: ether});
-    await config.flightSuretyData.fund({from: newAirline4, value: ether});
+    await config.flightSuretyApp.fund({from: newAirline2, value: ether});
+    await config.flightSuretyApp.fund({from: newAirline3, value: ether});
+    await config.flightSuretyApp.fund({from: newAirline4, value: ether});
 
     let result1 = await config.flightSuretyData.isAirlineFunded.call(newAirline2); 
     let result2 = await config.flightSuretyData.isAirlineFunded.call(newAirline3); 
@@ -131,8 +131,8 @@ contract('Flight Surety Tests', async (accounts) => {
     let newAirline5 = accounts[5];
     const result = await config.flightSuretyApp.registerAirline.call(newAirline5, "Test 5", {from: config.firstAirline});    
     // ASSERT
-    assert.equal(result[0], false, "Airline should not be able to register another airline");
     assert.equal(new BigNumber(result[1]).toNumber(), 1, "Vote must be 1");
+    assert.equal(result[0], false, "Airline should not be able to register another airline");
 
   });
 

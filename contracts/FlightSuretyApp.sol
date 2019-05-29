@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.4.14;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
@@ -235,7 +235,12 @@ contract FlightSuretyApp {
     {
 
     }
-    
+
+    function fund() public payable {
+        flightSuretyData.fund.value(msg.value)(msg.sender);
+    }
+
+
    /**
     * @dev Called after oracle has updated flight status
     *
@@ -473,4 +478,6 @@ contract FlightSuretyData {
     function isFirstAirline(address airlineId) external returns ( bool );
 
     function getRegisteredAirlines() external returns ( uint256 );
+
+    function fund(address airlineId) external payable;
 }

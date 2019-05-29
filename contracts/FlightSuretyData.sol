@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.4.14;
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -166,6 +166,7 @@ contract FlightSuretyData {
     {
         Airline memory airline = Airline(airlineId, name, false, 1);
         airlines[airlineId] = airline;
+        registeredAirlines++;
         emit AirlineRegistered(name);
     }
 
@@ -214,15 +215,16 @@ contract FlightSuretyData {
     */
     function fund
                             (
+                                address airlineId
                             )
                             public
                             payable
+                            requireAuthorizedCaller
                             requireAirlineFunds
     {
         funds += msg.value;
-        airlines[msg.sender].funded = true;
-        registeredAirlines++;
-        emit AirlineFunded(airlines[msg.sender].name);
+        airlines[airlineId].funded = true;
+        emit AirlineFunded(airlines[airlineId].name);
     }
 
     function getFlightKey
@@ -242,11 +244,11 @@ contract FlightSuretyData {
     * @dev Fallback function for funding smart contract.
     *
     */
-    function() 
+    function()
                             external
                             payable
     {
-        fund();
+        fund(msg.sender);
     }
 
 
